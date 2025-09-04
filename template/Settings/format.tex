@@ -41,14 +41,18 @@
 
 
 % Цвет гиперссылок и цитирования
-\usepackage{hyperref} 
- \hypersetup{ 
+\hypersetup{ 
      colorlinks=true, 
      linkcolor=black, 
      filecolor=blue, 
      citecolor = black,       
      urlcolor=blue, 
-     }
+}
+     
+% Настройка сносок по ГОСТу (шрифт 12pt, через один интервал)
+\renewcommand{\footnotelayout}{
+  \fontsize{12}{14}\selectfont
+}
     
 
 % Нумерация рисунков
@@ -57,12 +61,17 @@
 % Нумерация таблиц
 \counterwithin{table}{section}
 
-\counterwithin{table}{section}
+% Нумерация формул
+\numberwithin{equation}{section}
 
 % шрифт для листингов с лигатурами
 \setmonofont{JetBrains Mono}[
 	SizeFeatures={Size=10},
 	Contextuals=Alternate
+]
+
+\newfontfamily\cyrillicfonttt{JetBrains Mono}[
+	SizeFeatures={Size=10}
 ]
 
 % Перенос текста при переполнении
@@ -75,3 +84,44 @@
 
 
 % Посмотреть ещё стили можно тут https://www.overleaf.com/learn/latex/Code_Highlighting_with_minted
+
+% Настройка оформления списков по ГОСТу
+\setlist{noitemsep} % убираем лишние отступы в списках
+\setenumerate{label=\arabic*), ref=\arabic*)} % для числовых списков: 1), 2), 3)...
+\setenumerate[2]{label=\alph*), ref=\alph*)} % для вложенных списков: a), b), c)...
+
+% Настройка оформления заголовков по ГОСТу
+
+% Заголовок первого уровня: 15-16pt, все прописные, жирный, по центру, без абзаца, с новой страницы
+\titleformat{\section}
+{\normalfont\fontsize{15}{18}\bfseries\centering}
+{\thesection.}
+{1em}
+{\MakeUppercase}
+
+% Заголовок второго уровня: 14-15pt, как в предложениях, жирный, по центру, без абзаца
+\titleformat{\subsection}
+{\normalfont\fontsize{14}{17}\bfseries\centering}
+{\thesubsection.}
+{1em}
+{}
+
+% Заголовок третьего уровня: 14pt, как в предложениях, жирный курсив, по левому краю, без абзаца
+\titleformat{\subsubsection}
+{\normalfont\fontsize{14}{17}\bfseries\itshape\raggedright}
+{\thesubsubsection.}
+{1em}
+{}
+
+% Добавление пустой строки после заголовков для выделения рубрики
+\titlespacing*{\section}{0pt}{*2}{10pt}
+\titlespacing*{\subsection}{0pt}{*2}{10pt}
+\titlespacing*{\subsubsection}{0pt}{*2}{10pt}
+
+% Оформление подписей к рисункам курсивом, размер шрифта 13pt
+\usepackage[font={it,footnotesize}]{caption}
+\DeclareCaptionFont{it13pt}{\fontsize{13}{15}\itshape}
+\captionsetup[figure]{font=it13pt}
+
+% Оформление подписей к таблицам, размер шрифта 13pt
+\captionsetup[table]{font=footnotesize}
