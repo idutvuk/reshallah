@@ -1,24 +1,21 @@
-FROM ghcr.io/typst/typst:v0.13.1
+FROM python:3.11-slim
+
+# Устанавливаем зависимости и шрифты
+RUN echo "deb http://deb.debian.org/debian bookworm main contrib non-free" > /etc/apt/sources.list.d/contrib.list && \
+    apt-get update && \
+    apt-get install -y ttf-mscorefonts-installer fontconfig && \
+    fc-cache -f -v
 
 
-# Install required packages and Times New Roman font
-RUN apk update && \
-    apk add --no-cache \
-    msttcorefonts-installer \
-    fontconfig && \
-    update-ms-fonts && \
-    fc-cache -f
+# Устанавливаем Python-библиотеку typst и FastAPI суппорт
+RUN pip install typst \
+    fastapi \
+    fastapi-mcp \
+    uvicorn \
+    python-multipart
 
-#
-## Создаем директорию для пользовательских шрифтов внутри контейнера
-#RUN mkdir -p /usr/share/fonts/custom
-#
-#COPY fonts/ /usr/share/fonts/custom/
-#
-#RUN if command -v fc-cache >/dev/null 2>&1; then fc-cache -f -v; fi
+WORKDIR /app
+COPY server.py /app/
 
-COPY typst_template/ typst_template/
-
-WORKDIR typst_template
-
-CMD ["compile", "main.typ"]
+EXPOSE 41434
+CMD ["uvicorn", "server:app", "--host", "0.0.0.0", "--port", "41434", "--reload"]
