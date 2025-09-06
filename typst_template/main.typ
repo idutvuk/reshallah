@@ -3,6 +3,7 @@
 // =======================
 
 // ---- Глобальные настройки страницы и текста
+
 #let cfg = (
   paper: "a4",
   margin: (left: 2cm, right: 2cm, top: 2cm, bottom: 2cm),
@@ -124,10 +125,133 @@
 #let eqref = (label) => ref(label, supplement: none)
 
 
-// // ---- Титульные страницы
+
+#let sig(label: "", width: 6cm) = {
+  // signature line with label underneath (in parentheses)
+  stack(
+    spacing: 0.25em,
+    [
+      // «__» ______ 2025 г.  (подпись …)
+      // date + line + year
+      #box(width: width)[«__» #h(0.6em) ______]
+    ],
+    emph(size: 10.5pt)[(#label)]
+  )
+}
+
+// Main generator
+#let mirea-titlepage(
+  // верхняя часть
+  coat_of_arms: none,                // например: image("rf-coat.png", width: 2.8cm)
+  uni_short: "РТУ МИРЭА",
+
+  institute: none,                   // "Институт информационных технологий (ИТ)"
+  department: none,                  // "Кафедра ... (ИнППО)"
+
+  // центральный блок
+  doc_type_top: "ОТЧЁТ ПО ПРАКТИЧЕСКИМ РАБОТАМ",
+  discipline_prefix: "по дисциплине",
+  discipline: "Проектирование информационных систем",
+  topic_prefix: "на тему",
+  topic: "",                         // например: «Контроль экологической безопасности» ...
+
+  // сведения об авторе/проверившем
+  student_label: "Выполнил студент группы",
+  group: "ИКБО-00-00",
+  student_fio: "И.И. Иванов",
+
+  checker_label_left: "Принял",
+  checker_post_left: "Ассистент",
+  checker_fio_right: "П.П. Петров",
+
+  // подписи
+  left_note: "Практические работы выполнены",
+  right_note: "«Зачтено»",
+) = {
+  set align(center)
+  set text(size: 12pt)
+
+  image("mirea-logo.png", width: 0% + 79.37pt)
+  v(0.8em)
+
+  // "шапка"
+  smallcaps("МИНОБРНАУКИ РОССИИ")
+  v(0.4em)
+  "Федеральное государственное бюджетное образовательное учреждение высшего образования"
+  linebreak()
+  strong("«МИРЭА – Российский технологический университет»")
+  v(0.35em)
+  set text(size:16pt)
+  strong("РТУ МИРЭА")
+  set text(size:12pt)
+  v(0.5em)
+  line(length: 100%, stroke: 2pt)
+  v(0.9em)
+
+  // институт/кафедра (если заданы)
+  institute; v(0.35em)
+  department; v(0.9em)
+
+  // центральная часть
+  set text(size: 14pt)
+  strong(upper(doc_type_top))
+  v(0.5em)
+
+  strong[#discipline_prefix «#discipline»]
+  v(0.6em)
+
+  if topic != "" {
+    set text(size: 14pt)
+    topic_prefix
+    v(0.2em)
+    strong[#topic]
+    v(0.2em)
+  }
+
+  v(3.5em)
+
+  // блоки слева/справа (как в образце)
+  // используем сетку 2 колонки: слева подписи, справа ФИО/роли, выравнивание по краям
+  set text(size: 12pt)
+  grid(columns: (1fr, 1fr), column-gutter: 2cm)[
+    #align(left)[
+      #student_label #group
+    ]
+    #align(right)[
+      #student_fio
+    ]
+
+    #align(left)[
+      #checker_label_left
+      #linebreak()
+      #emph[#checker_post_left]
+    ]
+    #align(right)[
+      #checker_fio_right
+    ]
+  ]
+
+  v(4em)
+
+  // даты и подписи (две колонки)
+  grid(columns: (1fr, 1fr), column-gutter: 2cm)[
+    #align(left)[
+      #left_note «\_\_» \_\_\_\_\_\_ 2025 г.
+      #linebreak()
+      #text(size: 10.5pt)["(подпись студента)"]
+    ]
+    #align(right)[
+      #right_note «\_\_» \_\_\_\_\_\_ 2025 г.
+      #linebreak()
+      #text(size: 10.5pt)[(подпись руководителя)]
+    ]
+  ]
+  "Москва 2025"
+
+}
+
 
 #let titlepage(
-  org: "МИНОБРНАУКИ РОССИИ",
   uni: "Российский технологический университет (РТУ МИРЭА)",
   institute: none,
   department: none,
@@ -137,8 +261,6 @@
   author_fio: "И.И. Иванов",
   group: "Группа XX-00",
   supervisor: "И.О. Руководитель",
-  city: "Москва",
-  year: 2025,
 ) = {
   set align(center)
   block(spacing: 1.2em)[
@@ -168,41 +290,6 @@
 
 }
 
-#let verso_page(
-  reviewers: none,
-  editor: none,
-  proofread: none,
-  udk: none,
-  bbk: none,
-) = {
-  set align(left)
-  block(spacing: 0.8em)[
-    #strong[Выходные и справочные сведения]
-    #if udk != none { "УДК:"+ udk }
-    #if bbk != none { "ББК:"+ bbk }
-    #if reviewers != none { "Рецензенты:"+ reviewers }
-    #if editor != none { "Редактор:"+ editor }
-    #if proofread != none { "Корректор:"+ proofread }
-  ]
-  pagebreak()
-}
-
-
-// // =======================
-// //     Документ
-// // =======================
-
-#titlepage(
-  institute: "Институт информационных технологий",
-  department: "Примерная",
-  doc_type: "УЧЕБНОЕ ПОСОБИЕ",
-  work_title: "Шаблон оформления отчётов по ГОСТ",
-  discipline: "Технологии документирования",
-  author_fio: "И.И. Иванов",
-  group: "ИКБО-02-22",
-  supervisor: "П.П. Петров",
-  year: 2025,
-)
 
 // ---- Оглавление (автособираемое)
 #let toc_page() = {
@@ -212,15 +299,27 @@
   outline()
 }
 
+// // =======================
+// //     Документ
+// // =======================
 
 
-#verso_page(
-  reviewers: "д.т.н. А.А. Авторитетов; к.т.н. Б.Б. Экспертов",
-  editor: "В.В. Редакторов",
-  proofread: "Г.Г. Корректоров",
-  udk: "004.9",
-  bbk: "32.973",
+
+#mirea-titlepage(
+  coat_of_arms: image("mirea-logo.png", width: 2.8cm),
+  institute: "Институт информационных технологий (ИТ)",
+  department: "Кафедра инструментального и прикладного программного обеспечения (ИнППО)",
+  discipline: "Проектирование информационных систем",
+  topic: "«Контроль экологической безопасности» (мониторинг загрязнения воздуха и воды, учёт выбросов предприятий)",
+  group: "ИКБО-22-22",
+  student_fio: "Гиричев А.А.",
+  checker_fio_right: "Брагусь Н.В.",
 )
+
+
+
+
+
 
 #toc_page()
 
@@ -270,17 +369,36 @@ $ F = m dot a $ <eq:newton>
 
 = #lorem(5)
 == #lorem(7)
-#lorem(120)
+#lorem(120) (см. @rick)
+#figure(
+  image("rick.jpg", width: 60%),
+  caption: [
+    Never gonna give you up!
+  ],
+) <rick>
+
 == #lorem(10)
-#lorem(120)
+Как любил говорить старина Ландау, @landau  --- #lorem(120)
 
 
 = Заключение
 
-Текст заключения…
-
-= Список литературы
+Вот и всё… Неплохая получилась история. @kukhnya:2012 Интересная, весёлая, порой немного грустная, а главное – поучительная…Она научила нас быть смелыми и не бояться вызовов, которые готовит нам жизнь. Помогала нам добиваться поставленных целей несмотря ни на что. И самое важное – она научила нас по-настоящему любить и не сходить с пути, следуя за своей мечтой. #linebreak() 
+#set align(center)
+#sym.copyright Повар Лавров (@max)
+#set align(left)
+#figure(
+  image("max.png", width: 100%),
+  caption: [
+    Макс здорового человека
+  ],
+) <max>
 
 // ГОСТ-стиль
-// #bibliography("refs.bib", style: "gost-r-705-2008-numeric")
+#bibliography(
+  "refs.bib",
+  title: "СПИСОК ЛИТЕРАТУРЫ", 
+  style: "gost-r-705-2008-numeric",
+  full: true,
+)
 
