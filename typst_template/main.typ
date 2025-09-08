@@ -371,7 +371,7 @@ $ F = m dot a $ <eq:newton>
 == #lorem(7)
 #lorem(120) (см. @rick)
 #figure(
-  image("rick.jpg", width: 60%),
+  image("max.png", width: 60%),
   caption: [
     Never gonna give you up!
   ],
