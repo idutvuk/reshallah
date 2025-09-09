@@ -8,7 +8,6 @@
 # ]
 # ///
 from enum import Enum
-from typing import List
 from typing_extensions import Annotated
 import asyncio
 import argparse
@@ -30,11 +29,6 @@ class OutputFormat(str, Enum):
     svg = "svg"
 
 def compile_directory_to_pdf(directory_path: str) -> str:
-    """
-    Компилирует Typst документ из директории в PDF файл.
-    Сохраняет PDF файл рядом с директорией.
-    Возвращает путь к созданному PDF файлу.
-    """
     if not os.path.exists(directory_path):
         raise FileNotFoundError(f"Directory {directory_path} does not exist")
     
@@ -46,57 +40,41 @@ def compile_directory_to_pdf(directory_path: str) -> str:
     if not typ_files:
         raise FileNotFoundError(f"No .typ files found in {directory_path}")
     
-    # Использовать первый найденный .typ файл
     typ_file = typ_files[0]
     
-    # Создать имя для выходного PDF файла рядом с директорией
     directory_name = os.path.basename(os.path.normpath(directory_path))
     parent_dir = os.path.dirname(os.path.abspath(directory_path))
     output_pdf_path = os.path.join(parent_dir, f"{directory_name}.pdf")
     
     with tempfile.TemporaryDirectory() as temp_dir:
-        # Скопировать содержимое директории во временную папку
         shutil.copytree(directory_path, temp_dir, dirs_exist_ok=True)
         
-        # Путь к .typ файлу во временной директории
         typ_file_path = os.path.join(temp_dir, typ_file)
         
-        # Компилировать в PDF
         output = typst.compile(
             typ_file_path,
             format="pdf",
             ppi=144.0
         )
         
-        # Сохранить PDF файл
         with open(output_pdf_path, "wb") as output_file:
             output_file.write(output)
     
     return output_pdf_path
 
 def main(
-        directory: Annotated[str, typer.Option("--dir", "-d")] = "",
-        file: Annotated[str, typer.Option("--file", "-f")] = "",
+        directory: Annotated[str, typer.Option("--dir", "-d")],
         output: Annotated[str, typer.Option("--output", "-o")] = "output",
         type_format: Annotated[OutputFormat, typer.Option("--type_output", "-t")] = OutputFormat.pdf.value
 ):
     outfile_name = f"{output}.{type_format.value}"
 
     with tempfile.TemporaryDirectory() as temp_dir, open(outfile_name, "wb") as output_file:
-        if directory:
-            shutil.copytree(directory, temp_dir, dirs_exist_ok=True)
-            typ_file = None
-            for f in os.listdir(temp_dir):
-                if f.endswith(".typ"):
-                    typ_file = f
-        elif file:
-            shutil.copy(file, temp_dir)
-            typ_file = file
-        else:
-            typer.echo("no --dir or --file provided, lemme try to compile current directory")
-            shutil.copytree(os.getcwd(), temp_dir, dirs_exist_ok=True)
-            typ_file = [f for f in os.listdir(temp_dir) if f.endswith(".typ")][0]
-
+        shutil.copytree(directory, temp_dir, dirs_exist_ok=True)
+        typ_file = None
+        for f in os.listdir(temp_dir):
+            if f.endswith(".typ"):
+                typ_file = f
 
         typ_file_path = os.path.join(temp_dir, typ_file)
         output = typst.compile(
@@ -109,7 +87,6 @@ def main(
         typer.echo(f"compiled, output at {outfile_name}")
 
 
-# MCP Server setup
 server = Server("typst-compiler")
 
 @server.list_tools()
@@ -137,9 +114,6 @@ async def handle_list_tools() -> list[types.Tool]:
 
 @server.call_tool()
 async def handle_call_tool(name: str, arguments: dict) -> list[types.TextContent]:
-    """
-    Handle tool calls.
-    """
     if name == "compile_typst_to_pdf":
         directory_path = arguments.get("directory_path")
         
@@ -165,7 +139,6 @@ async def handle_call_tool(name: str, arguments: dict) -> list[types.TextContent
         raise ValueError(f"Unknown tool: {name}")
 
 async def run_mcp_server(port: int = 41434):
-    """Run the MCP server on specified port"""
     from mcp.server.stdio import stdio_server
     
     async with stdio_server() as (read_stream, write_stream):
