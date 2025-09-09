@@ -21,8 +21,8 @@ class OutputFormat(str, Enum):
     svg = "svg"
 
 def main(
-        directory: Annotated[str, typer.Option("--dir", "-d")] = ".",
-        files: Annotated[List[str], typer.Option("--files", "-f")] = (),
+        directory: Annotated[str, typer.Option("--dir", "-d")] = "",
+        file: Annotated[str, typer.Option("--file", "-f")] = "",
         output: Annotated[str, typer.Option("--output", "-o")] = "output",
         type_format: Annotated[OutputFormat, typer.Option("--type_output", "-t")] = OutputFormat.pdf.value
 ):
@@ -31,20 +31,21 @@ def main(
     with tempfile.TemporaryDirectory() as temp_dir, open(outfile_name, "wb") as output_file:
         if directory:
             shutil.copytree(directory, temp_dir, dirs_exist_ok=True)
-            typ_file = [f for f in os.listdir(temp_dir) if f.endswith(".typ")][0]
-        elif len(files):
-            typer.echo(f"{files}, {len(files)}, {type(files)}")
-            for f in files:
-                shutil.copy(f, temp_dir)
-                if f.endswith(".typ"):
-                    typ_file = f
+            typ_file = None
+            for f in os.listdir(temp_dir):
+                if f.endswith(".typ")
+        elif file:
+            shutil.copy(file, temp_dir)
+            typ_file = file
         else:
-            typer.echo("no --directory or --files provided, lemme try to compile current directory")
+            typer.echo("no --dir or --file provided, lemme try to compile current directory")
             shutil.copytree(os.getcwd(), temp_dir, dirs_exist_ok=True)
             typ_file = [f for f in os.listdir(temp_dir) if f.endswith(".typ")][0]
-        
+
+
+        typ_file_path = os.path.join(temp_dir, typ_file)
         output = typst.compile(
-            os.path.join(temp_dir, typ_file),
+            typ_file_path,
             format=type_format.value,
             ppi=144.0
         )
