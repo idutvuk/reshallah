@@ -28,7 +28,7 @@ class OutputFormat(str, Enum):
     png = "png"
     svg = "svg"
 
-def compile_directory_to_pdf(directory_path: str) -> str:
+def compile_directory_to_pdf(directory_path: str, content_file: str = None) -> str:
     if not os.path.exists(directory_path):
         raise FileNotFoundError(f"Directory {directory_path} does not exist")
     
@@ -48,6 +48,10 @@ def compile_directory_to_pdf(directory_path: str) -> str:
     
     with tempfile.TemporaryDirectory() as temp_dir:
         shutil.copytree(directory_path, temp_dir, dirs_exist_ok=True)
+        
+        # Если передан content_file, копируем его как content.typ
+        if content_file and os.path.exists(content_file):
+            shutil.copy2(content_file, os.path.join(temp_dir, "content.typ"))
         
         typ_file_path = os.path.join(temp_dir, typ_file)
         
@@ -109,6 +113,24 @@ async def handle_list_tools() -> list[types.Tool]:
                 },
                 "required": ["directory_path"]
             }
+        ),
+        types.Tool(
+            name="compile_typst_with_content",
+            description="Compile a Typst document directory to PDF with additional content.typ file. The PDF will be saved next to the directory.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "directory_path": {
+                        "type": "string",
+                        "description": "Path to the directory containing .typ files to compile"
+                    },
+                    "content_file": {
+                        "type": "string",
+                        "description": "Path to the content.typ file to be included in the center of main.typ"
+                    }
+                },
+                "required": ["directory_path", "content_file"]
+            }
         )
     ]
 
@@ -133,6 +155,34 @@ async def handle_call_tool(name: str, arguments: dict) -> list[types.TextContent
             return [types.TextContent(
                 type="text",
                 text=f"Error compiling Typst document: {str(e)}"
+            )]
+    
+    elif name == "compile_typst_with_content":
+        directory_path = arguments.get("directory_path")
+        content_file = arguments.get("content_file")
+        
+        if not directory_path:
+            return [types.TextContent(
+                type="text",
+                text="Error: directory_path is required"
+            )]
+        
+        if not content_file:
+            return [types.TextContent(
+                type="text",
+                text="Error: content_file is required"
+            )]
+        
+        try:
+            output_pdf_path = compile_directory_to_pdf(directory_path, content_file)
+            return [types.TextContent(
+                type="text", 
+                text=f"Successfully compiled Typst document with content to PDF: {output_pdf_path}"
+            )]
+        except Exception as e:
+            return [types.TextContent(
+                type="text",
+                text=f"Error compiling Typst document with content: {str(e)}"
             )]
     
     else:
