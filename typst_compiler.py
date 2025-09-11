@@ -23,24 +23,9 @@ from mcp.server import NotificationOptions, Server
 from mcp.types import Resource, Tool, TextContent
 import mcp.types as types
 
-class OutputFormat(str, Enum):
-    pdf = "pdf"
-    png = "png"
-    svg = "svg"
 
-def compile_directory_to_pdf(directory_path: str, content_file: str = None) -> str:
-    if not os.path.exists(directory_path):
-        raise FileNotFoundError(f"Directory {directory_path} does not exist")
-    
-    if not os.path.isdir(directory_path):
-        raise ValueError(f"{directory_path} is not a directory")
-    
-    # Найти .typ файл в директории
-    typ_files = [f for f in os.listdir(directory_path) if f.endswith(".typ")]
-    if not typ_files:
-        raise FileNotFoundError(f"No .typ files found in {directory_path}")
-    
-    typ_file = typ_files[0]
+def compile_directory_to_pdf(directory_path: str, content_file: str = None, content_directory: str = None, custom_titlepage: str = None) -> str:
+    typ_file = next(f for f in os.listdir(directory_path) if f.endswith("main.typ"))
     
     directory_name = os.path.basename(os.path.normpath(directory_path))
     parent_dir = os.path.dirname(os.path.abspath(directory_path))
@@ -52,6 +37,47 @@ def compile_directory_to_pdf(directory_path: str, content_file: str = None) -> s
         # Если передан content_file, копируем его как content.typ
         if content_file and os.path.exists(content_file):
             shutil.copy2(content_file, os.path.join(temp_dir, "content.typ"))
+        
+        # Если передана content_directory, копируем все содержимое и создаем content.typ
+        if content_directory and os.path.exists(content_directory):
+            # Копируем все файлы из content_directory в temp_dir
+            for item in os.listdir(content_directory):
+                src = os.path.join(content_directory, item)
+                dst = os.path.join(temp_dir, item)
+                if os.path.isfile(src):
+                    shutil.copy2(src, dst)
+                elif os.path.isdir(src):
+                    shutil.copytree(src, dst, dirs_exist_ok=True)
+            
+            # Ищем content.typ в content_directory
+            content_typ_path = os.path.join(content_directory, "content.typ")
+            if os.path.exists(content_typ_path):
+                shutil.copy2(content_typ_path, os.path.join(temp_dir, "content.typ"))
+        
+        # Если передан custom_titlepage (PDF файл), добавляем его в начало документа
+        if custom_titlepage and os.path.exists(custom_titlepage):
+            # Копируем PDF файл в временную директорию
+            titlepage_filename = os.path.basename(custom_titlepage)
+            titlepage_temp_path = os.path.join(temp_dir, titlepage_filename)
+            shutil.copy2(custom_titlepage, titlepage_temp_path)
+            
+            # Читаем основной файл main.typ
+            main_typ_path = os.path.join(temp_dir, typ_file)
+            with open(main_typ_path, 'r', encoding='utf-8') as f:
+                main_content = f.read()
+            
+            # Добавляем импорт muchpdf и включение PDF в самое начало файла
+            pdf_include = (f'#set page (margin: (left: 2cm, right:2 2cm, top: 2cm, bottom: 2cm))\n'
+                           f'#import "@preview/muchpdf:0.1.0": muchpdf\n\n'
+                           f'#muchpdf(read("{titlepage_filename}", encoding: none))\n\n'
+                           )
+            
+            # Добавляем в начало файла перед всеми остальными декларациями
+            main_content = pdf_include + main_content
+            
+            # Записываем обновленный main.typ
+            with open(main_typ_path, 'w', encoding='utf-8') as f:
+                f.write(main_content)
         
         typ_file_path = os.path.join(temp_dir, typ_file)
         
@@ -66,12 +92,13 @@ def compile_directory_to_pdf(directory_path: str, content_file: str = None) -> s
     
     return output_pdf_path
 
+
 def main(
         directory: Annotated[str, typer.Option("--dir", "-d")],
         output: Annotated[str, typer.Option("--output", "-o")] = "output",
-        type_format: Annotated[OutputFormat, typer.Option("--type_output", "-t")] = OutputFormat.pdf.value
 ):
-    outfile_name = f"{output}.{type_format.value}"
+    """ cli tool"""
+    outfile_name = f"{output}.pdf"
 
     with tempfile.TemporaryDirectory() as temp_dir, open(outfile_name, "wb") as output_file:
         shutil.copytree(directory, temp_dir, dirs_exist_ok=True)
@@ -83,7 +110,7 @@ def main(
         typ_file_path = os.path.join(temp_dir, typ_file)
         output = typst.compile(
             typ_file_path,
-            format=type_format.value,
+            format="pdf",
             ppi=144.0
         )
 
@@ -95,10 +122,6 @@ server = Server("typst-compiler")
 
 @server.list_tools()
 async def handle_list_tools() -> list[types.Tool]:
-    """
-    List available tools.
-    Each tool specifies its arguments using JSON Schema validation.
-    """
     return [
         types.Tool(
             name="compile_typst_to_pdf",
@@ -130,6 +153,32 @@ async def handle_list_tools() -> list[types.Tool]:
                     }
                 },
                 "required": ["directory_path", "content_file"]
+            }
+        ),
+        types.Tool(
+            name="compile_typst_advanced",
+            description="Compile a Typst document with advanced options: custom PDF titlepage, content directory with images, etc. All input paths should be absolute",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "directory_path": {
+                        "type": "string",
+                        "description": "Path to the directory containing .typ files to compile"
+                    },
+                    "content_file": {
+                        "type": "string",
+                        "description": "Optional: Path to the content.typ file to be included"
+                    },
+                    "content_directory": {
+                        "type": "string", 
+                        "description": "Optional: Path to directory containing content.typ and images/resources"
+                    },
+                    "custom_titlepage": {
+                        "type": "string",
+                        "description": "Optional: Path to custom titlepage PDF file to include at the beginning of the document"
+                    }
+                },
+                "required": ["directory_path"]
             }
         )
     ]
@@ -183,6 +232,35 @@ async def handle_call_tool(name: str, arguments: dict) -> list[types.TextContent
             return [types.TextContent(
                 type="text",
                 text=f"Error compiling Typst document with content: {str(e)}"
+            )]
+    
+    elif name == "compile_typst_advanced":
+        directory_path = arguments.get("directory_path")
+        content_file = arguments.get("content_file")
+        content_directory = arguments.get("content_directory")
+        custom_titlepage = arguments.get("custom_titlepage")
+        
+        if not directory_path:
+            return [types.TextContent(
+                type="text",
+                text="Error: directory_path is required"
+            )]
+        
+        try:
+            output_pdf_path = compile_directory_to_pdf(
+                directory_path, 
+                content_file=content_file,
+                content_directory=content_directory,
+                custom_titlepage=custom_titlepage
+            )
+            return [types.TextContent(
+                type="text", 
+                text=f"Successfully compiled Typst document with advanced options to PDF: {output_pdf_path}"
+            )]
+        except Exception as e:
+            return [types.TextContent(
+                type="text",
+                text=f"Error compiling Typst document with advanced options: {str(e)}"
             )]
     
     else:
