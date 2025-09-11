@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "reshallah"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = [
+  "typst",
+  "typer",
+  "mcp",
+  "asyncio",
+  "requests",
+  "gitpython",
+]
+
+[project.scripts]
+reshallah = "reshallah.cli:cli_main"
+
+[tool.setuptools.package-data]
+reshallah = ["assets/**"]

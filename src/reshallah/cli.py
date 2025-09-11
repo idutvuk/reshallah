@@ -118,6 +118,27 @@ def main(
         typer.echo(f"compiled, output at {outfile_name}")
 
 
+# Создаем экземпляр Typer приложения
+app = typer.Typer()
+
+
+@app.command()
+def compile(
+        directory: Annotated[str, typer.Option("--dir", "-d")],
+        output: Annotated[str, typer.Option("--output", "-o")] = "output",
+):
+    """Compile a Typst document directory to PDF"""
+    main(directory, output)
+
+
+@app.command()
+def mcp(
+        port: Annotated[int, typer.Option("--port", "-p")] = 41434,
+):
+    """Run as MCP server"""
+    asyncio.run(run_mcp_server(port))
+
+
 server = Server("typst-compiler")
 
 @server.list_tools()
@@ -283,16 +304,9 @@ async def run_mcp_server(port: int = 41434):
             ),
         )
 
+def cli_main():
+    """Entry point for the CLI application"""
+    app()
+
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Typst Compiler with MCP Server")
-    parser.add_argument("--mcp", action="store_true", help="Run as MCP server")
-    parser.add_argument("--port", type=int, default=41434, help="Port for MCP server")
-    
-    args, unknown = parser.parse_known_args()
-    
-    if args.mcp:
-        asyncio.run(run_mcp_server(args.port))
-    else:
-        # Restore original typer arguments for CLI mode
-        sys.argv = [sys.argv[0]] + unknown
-        typer.run(main)
+    cli_main()
