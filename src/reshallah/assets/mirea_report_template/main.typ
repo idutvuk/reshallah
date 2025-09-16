@@ -116,11 +116,14 @@
 #show math.equation: set align(center)
 
 
-// ---- Утилиты для ссылок и неразрывных пробелов
+// ---- Настройки листингов кода
 
-// Сокращённые ссылки "рис. N" и "табл. N"
+// Листинги кода будут использовать стандартные настройки Typst
+
+// Сокращённые ссылки "рис. N", "табл. N" и "лист. N"
 #let rref = (label) => [рис.~#ref(label, supplement: none)]
 #let tref = (label) => [табл.~#ref(label, supplement: none)]
+#let lref = (label) => [лист.~#ref(label, supplement: none)]
 // Ссылка на формулу: только номер в скобках
 #let eqref = (label) => ref(label, supplement: none)
 
@@ -264,7 +267,7 @@
 ) = {
   set align(center)
   block(spacing: 1.2em)[
-    #smallcaps[#{org}]
+    #smallcaps["МИНОБРНАУКИ РОССИИ"]
     #uni
     #institute
     #department
@@ -285,7 +288,7 @@
 
     #v(6em)
 
-    #city \ #year
+    Москва 2025
   ]
 
 }

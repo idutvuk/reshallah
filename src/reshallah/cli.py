@@ -24,6 +24,89 @@ from mcp.types import Resource, Tool, TextContent
 import mcp.types as types
 
 
+def compile_mirea_report(directory_path: str, custom_titlepage: str = None) -> str:
+    """Compile MIREA report by copying template and requiring content.typ file."""
+    # Normalize the directory path
+    directory_path = os.path.abspath(directory_path)
+    
+    # Check if content.typ exists in the directory
+    content_typ_path = os.path.join(directory_path, "content.typ")
+    if not os.path.exists(content_typ_path):
+        raise FileNotFoundError(f"content.typ file not found at {content_typ_path}. Directory path: {directory_path}. This is required for MIREA reports.")
+    
+    # Get the path to the mirea_report_template folder
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    template_dir = os.path.join(current_dir, "assets", "mirea_report_template")
+    
+    if not os.path.exists(template_dir):
+        raise FileNotFoundError(f"MIREA report template not found at {template_dir}")
+    
+    directory_name = os.path.basename(os.path.normpath(directory_path))
+    parent_dir = os.path.dirname(os.path.abspath(directory_path))
+    output_pdf_path = os.path.join(parent_dir, f"{directory_name}.pdf")
+    
+    with tempfile.TemporaryDirectory() as temp_dir:
+        # First copy the template files
+        for item in os.listdir(template_dir):
+            src = os.path.join(template_dir, item)
+            dst = os.path.join(temp_dir, item)
+            if os.path.isfile(src):
+                shutil.copy2(src, dst)
+            elif os.path.isdir(src):
+                shutil.copytree(src, dst, dirs_exist_ok=True)
+        
+        # Then copy the user's content.typ file (overwriting template's content.typ)
+        shutil.copy2(content_typ_path, os.path.join(temp_dir, "content.typ"))
+        
+        # Copy any other files from user's directory (but not overwriting main template files)
+        template_files = {"main.typ", "simple-template.typ", "listing_examples.typ", "main_example.typ", "mirea-logo.png", "refs.bib", "simple_listing_example.typ", "test.typ"}
+        for item in os.listdir(directory_path):
+            if item not in template_files and item != "content.typ":  # Skip content.typ as it's already copied
+                src = os.path.join(directory_path, item)
+                dst = os.path.join(temp_dir, item)
+                if os.path.isfile(src):
+                    shutil.copy2(src, dst)
+                elif os.path.isdir(src):
+                    shutil.copytree(src, dst, dirs_exist_ok=True)
+        
+        # Handle custom titlepage if provided
+        if custom_titlepage and os.path.exists(custom_titlepage):
+            # Copy PDF file to temp directory
+            titlepage_filename = os.path.basename(custom_titlepage)
+            titlepage_temp_path = os.path.join(temp_dir, titlepage_filename)
+            shutil.copy2(custom_titlepage, titlepage_temp_path)
+            
+            # Read main.typ and add titlepage inclusion
+            main_typ_path = os.path.join(temp_dir, "main.typ")
+            with open(main_typ_path, 'r', encoding='utf-8') as f:
+                main_content = f.read()
+            
+            # Add muchpdf import and titlepage inclusion at the beginning
+            pdf_include = (
+                # f'#set page (margin: (left: 2cm, right: 2cm, top: 2cm, bottom: 2cm))\n'
+                          f'#import "@preview/muchpdf:0.1.0": muchpdf\n\n'
+                          f'#muchpdf(read("{titlepage_filename}", encoding: none))\n\n')
+            
+            main_content = pdf_include + main_content
+            
+            with open(main_typ_path, 'w', encoding='utf-8') as f:
+                f.write(main_content)
+        
+        # Compile using main.typ
+        typ_file_path = os.path.join(temp_dir, "main.typ")
+        
+        output = typst.compile(
+            typ_file_path,
+            format="pdf",
+            ppi=144.0
+        )
+        
+        with open(output_pdf_path, "wb") as output_file:
+            output_file.write(output)
+    
+    return output_pdf_path
+
+
 def compile_directory_to_pdf(directory_path: str, content_file: str = None, content_directory: str = None, custom_titlepage: str = None) -> str:
     typ_file = next(f for f in os.listdir(directory_path) if f.endswith("main.typ"))
     
@@ -67,7 +150,7 @@ def compile_directory_to_pdf(directory_path: str, content_file: str = None, cont
                 main_content = f.read()
             
             # Добавляем импорт muchpdf и включение PDF в самое начало файла
-            pdf_include = (f'#set page (margin: (left: 2cm, right:2 2cm, top: 2cm, bottom: 2cm))\n'
+            pdf_include = (
                            f'#import "@preview/muchpdf:0.1.0": muchpdf\n\n'
                            f'#muchpdf(read("{titlepage_filename}", encoding: none))\n\n'
                            )
@@ -159,40 +242,14 @@ async def handle_list_tools() -> list[types.Tool]:
             }
         ),
         types.Tool(
-            name="compile_typst_with_content",
-            description="Compile a Typst document directory to PDF with additional content.typ file. The PDF will be saved next to the directory.",
+            name="compile_mirea_report",
+            description="Compile a MIREA report using the built-in template. Requires a content.typ file in the target directory. The PDF will be saved next to the directory.",
             inputSchema={
                 "type": "object",
                 "properties": {
                     "directory_path": {
                         "type": "string",
-                        "description": "Path to the directory containing .typ files to compile"
-                    },
-                    "content_file": {
-                        "type": "string",
-                        "description": "Path to the content.typ file to be included in the center of main.typ"
-                    }
-                },
-                "required": ["directory_path", "content_file"]
-            }
-        ),
-        types.Tool(
-            name="compile_typst_advanced",
-            description="Compile a Typst document with advanced options: custom PDF titlepage, content directory with images, etc. All input paths should be absolute",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "directory_path": {
-                        "type": "string",
-                        "description": "Path to the directory containing .typ files to compile"
-                    },
-                    "content_file": {
-                        "type": "string",
-                        "description": "Optional: Path to the content.typ file to be included"
-                    },
-                    "content_directory": {
-                        "type": "string", 
-                        "description": "Optional: Path to directory containing content.typ and images/resources"
+                        "description": "Path to the directory containing content.typ file"
                     },
                     "custom_titlepage": {
                         "type": "string",
@@ -224,41 +281,11 @@ async def handle_call_tool(name: str, arguments: dict) -> list[types.TextContent
         except Exception as e:
             return [types.TextContent(
                 type="text",
-                text=f"Error compiling Typst document: {str(e)}"
+                text=f"Error compiling Typst document: {str(e)}, {type(e)}"
             )]
     
-    elif name == "compile_typst_with_content":
+    elif name == "compile_mirea_report":
         directory_path = arguments.get("directory_path")
-        content_file = arguments.get("content_file")
-        
-        if not directory_path:
-            return [types.TextContent(
-                type="text",
-                text="Error: directory_path is required"
-            )]
-        
-        if not content_file:
-            return [types.TextContent(
-                type="text",
-                text="Error: content_file is required"
-            )]
-        
-        try:
-            output_pdf_path = compile_directory_to_pdf(directory_path, content_file)
-            return [types.TextContent(
-                type="text", 
-                text=f"Successfully compiled Typst document with content to PDF: {output_pdf_path}"
-            )]
-        except Exception as e:
-            return [types.TextContent(
-                type="text",
-                text=f"Error compiling Typst document with content: {str(e)}"
-            )]
-    
-    elif name == "compile_typst_advanced":
-        directory_path = arguments.get("directory_path")
-        content_file = arguments.get("content_file")
-        content_directory = arguments.get("content_directory")
         custom_titlepage = arguments.get("custom_titlepage")
         
         if not directory_path:
@@ -268,20 +295,18 @@ async def handle_call_tool(name: str, arguments: dict) -> list[types.TextContent
             )]
         
         try:
-            output_pdf_path = compile_directory_to_pdf(
+            output_pdf_path = compile_mirea_report(
                 directory_path, 
-                content_file=content_file,
-                content_directory=content_directory,
                 custom_titlepage=custom_titlepage
             )
             return [types.TextContent(
                 type="text", 
-                text=f"Successfully compiled Typst document with advanced options to PDF: {output_pdf_path}"
+                text=f"Successfully compiled MIREA report to PDF: {output_pdf_path}"
             )]
         except Exception as e:
             return [types.TextContent(
                 type="text",
-                text=f"Error compiling Typst document with advanced options: {str(e)}"
+                text=f"Error compiling MIREA report: {str(e)}"
             )]
     
     else:
