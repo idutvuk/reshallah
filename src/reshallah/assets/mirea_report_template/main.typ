@@ -82,7 +82,8 @@
 // Заголовок 3 уровня: жирный курсив, по левому краю, отступ 10 pt
 #show heading.where(level: 3): it => [
   #set align(left)
-  #strong[#emph[#set text(size: 14pt); it.body]]
+  #set text(weight: "bold")
+  #it.body
   #v(10pt)
 ]
 
