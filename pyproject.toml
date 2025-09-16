@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "reshallah"
-version = "0.1.16"
+version = "0.1.20"
 requires-python = ">=3.11"
 dependencies = [
   "typst",
@@ -12,6 +12,7 @@ dependencies = [
   "mcp",
   "asyncio",
   "requests",
+  "pypdf2>=3.0.1",
 ]
 
 [project.scripts]

@@ -2,6 +2,7 @@ import tempfile
 import shutil
 import os
 import typst
+from PyPDF2 import PdfMerger
 
 
 def compile_directory_to_pdf(directory_path: str, content_file: str = None, content_directory: str = None, custom_titlepage: str = None) -> str:
@@ -59,31 +60,6 @@ def compile_directory_to_pdf(directory_path: str, content_file: str = None, cont
             if os.path.exists(content_typ_path):
                 shutil.copy2(content_typ_path, os.path.join(temp_dir, "content.typ"))
         
-        # Если передан custom_titlepage (PDF файл), добавляем его в начало документа
-        if custom_titlepage and os.path.exists(custom_titlepage):
-            # Копируем PDF файл в временную директорию
-            titlepage_filename = os.path.basename(custom_titlepage)
-            titlepage_temp_path = os.path.join(temp_dir, titlepage_filename)
-            shutil.copy2(custom_titlepage, titlepage_temp_path)
-            
-            # Читаем основной файл main.typ
-            main_typ_path = os.path.join(temp_dir, typ_file)
-            with open(main_typ_path, 'r', encoding='utf-8') as f:
-                main_content = f.read()
-            
-            # Добавляем импорт muchpdf и включение PDF в самое начало файла
-            pdf_include = (
-                           f'#import "@preview/muchpdf:0.1.0": muchpdf\n\n'
-                           f'#muchpdf(read("{titlepage_filename}", encoding: none))\n\n'
-                           )
-            
-            # Добавляем в начало файла перед всеми остальными декларациями
-            main_content = pdf_include + main_content
-            
-            # Записываем обновленный main.typ
-            with open(main_typ_path, 'w', encoding='utf-8') as f:
-                f.write(main_content)
-        
         typ_file_path = os.path.join(temp_dir, typ_file)
         
         output = typst.compile(
@@ -91,9 +67,24 @@ def compile_directory_to_pdf(directory_path: str, content_file: str = None, cont
             format="pdf",
             ppi=144.0
         )
-        
-        with open(output_pdf_path, "wb") as output_file:
-            output_file.write(output)
+
+        # Если передан custom_titlepage, объединяем PDF'ы через PdfMerger
+        if custom_titlepage and os.path.exists(custom_titlepage):
+            compiled_pdf_temp_path = os.path.join(temp_dir, "compiled.pdf")
+            with open(compiled_pdf_temp_path, "wb") as compiled_file:
+                compiled_file.write(output)
+
+            merger = PdfMerger()
+            try:
+                merger.append(custom_titlepage)
+                merger.append(compiled_pdf_temp_path)
+                with open(output_pdf_path, "wb") as merged_out:
+                    merger.write(merged_out)
+            finally:
+                merger.close()
+        else:
+            with open(output_pdf_path, "wb") as output_file:
+                output_file.write(output)
     
     return output_pdf_path
 

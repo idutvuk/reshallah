@@ -2,6 +2,7 @@ import tempfile
 import shutil
 import os
 import typst
+from PyPDF2 import PdfMerger
 
 
 def compile_mirea_report(directory_path: str, custom_titlepage: str = None) -> str:
@@ -67,29 +68,6 @@ def compile_mirea_report(directory_path: str, custom_titlepage: str = None) -> s
                 elif os.path.isdir(src):
                     shutil.copytree(src, dst, dirs_exist_ok=True)
         
-        # Handle custom titlepage if provided
-        if custom_titlepage and os.path.exists(custom_titlepage):
-            # Copy PDF file to temp directory
-            titlepage_filename = os.path.basename(custom_titlepage)
-            titlepage_temp_path = os.path.join(temp_dir, titlepage_filename)
-            shutil.copy2(custom_titlepage, titlepage_temp_path)
-            
-            # Read main.typ and add titlepage inclusion
-            main_typ_path = os.path.join(temp_dir, "main.typ")
-            with open(main_typ_path, 'r', encoding='utf-8') as f:
-                main_content = f.read()
-            
-            # Add muchpdf import and titlepage inclusion at the beginning
-            pdf_include = (
-                          f'#import "@preview/muchpdf:0.1.0": muchpdf\n\n'
-                f'#set page (margin: (left: 2cm, right: 2cm, top: 2cm, bottom: 2cm))\n'
-                          f'#muchpdf(read("{titlepage_filename}", encoding: none))\n\n')
-            
-            main_content = pdf_include + main_content
-            
-            with open(main_typ_path, 'w', encoding='utf-8') as f:
-                f.write(main_content)
-        
         # Compile using main.typ
         typ_file_path = os.path.join(temp_dir, "main.typ")
         
@@ -98,8 +76,23 @@ def compile_mirea_report(directory_path: str, custom_titlepage: str = None) -> s
             format="pdf",
             ppi=144.0
         )
-        
-        with open(output_pdf_path, "wb") as output_file:
-            output_file.write(output)
+
+        # If a custom title page is provided, merge it before the compiled report
+        if custom_titlepage and os.path.exists(custom_titlepage):
+            compiled_pdf_temp_path = os.path.join(temp_dir, "compiled.pdf")
+            with open(compiled_pdf_temp_path, "wb") as compiled_file:
+                compiled_file.write(output)
+
+            merger = PdfMerger()
+            try:
+                merger.append(custom_titlepage)
+                merger.append(compiled_pdf_temp_path)
+                with open(output_pdf_path, "wb") as merged_out:
+                    merger.write(merged_out)
+            finally:
+                merger.close()
+        else:
+            with open(output_pdf_path, "wb") as output_file:
+                output_file.write(output)
     
     return output_pdf_path
