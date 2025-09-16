@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "reshallah"
-version = "0.1.13"
+version = "0.1.16"
 requires-python = ">=3.11"
 dependencies = [
   "typst",
@@ -12,7 +12,6 @@ dependencies = [
   "mcp",
   "asyncio",
   "requests",
-#  "gitpython",
 ]
 
 [project.scripts]

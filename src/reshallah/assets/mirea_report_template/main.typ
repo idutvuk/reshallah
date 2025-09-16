@@ -299,6 +299,7 @@
   set align(center)
   v(1em)
   set align(left)
+  pagebreak()
   outline()
 }
 
@@ -330,10 +331,4 @@
 // Файл content.typ будет скопирован в рабочую директорию при компиляции
 #include "content.typ"
 
-#bibliography(
-  "refs.bib",
-  title: "СПИСОК ЛИТЕРАТУРЫ", 
-  style: "gost-r-705-2008-numeric",
-  full: true,
-)
 
