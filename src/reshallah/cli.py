@@ -11,12 +11,11 @@ def main(
         directory: Annotated[str, typer.Option("--dir", "-d")],
         output: Annotated[str, typer.Option("--output", "-o")] = "output",
 ):
-    """CLI tool для компиляции Typst документов"""
+    """CLI for compile directories with typst"""
     outfile_name = compile_simple_typst(directory, output)
     typer.echo(f"compiled, output at {outfile_name}")
 
 
-# Создаем экземпляр Typer приложения
 app = typer.Typer()
 
 
@@ -30,9 +29,7 @@ def compile(
 
 
 @app.command()
-def mcp(
-        port: Annotated[int, typer.Option("--port", "-p")] = 41434,
-):
+def mcp():
     """Run as MCP server"""
     asyncio.run(run_mcp_server())
 

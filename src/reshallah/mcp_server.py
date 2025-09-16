@@ -57,10 +57,7 @@ async def handle_call_tool(name: str, arguments: dict) -> list[types.TextContent
         directory_path = arguments.get("directory_path")
         
         if not directory_path:
-            return [types.TextContent(
-                type="text",
-                text="Error: directory_path is required"
-            )]
+            raise ValueError("directory_path is required")
         
         try:
             output_pdf_path = compile_directory_to_pdf(directory_path)
@@ -69,20 +66,15 @@ async def handle_call_tool(name: str, arguments: dict) -> list[types.TextContent
                 text=f"Successfully compiled Typst document to PDF: {output_pdf_path}"
             )]
         except Exception as e:
-            return [types.TextContent(
-                type="text",
-                text=f"Error compiling Typst document: {str(e)}, {type(e)}"
-            )]
+            # Re-raise the exception so MCP client receives an error
+            raise RuntimeError(f"Error compiling Typst document: {str(e)}") from e
     
     elif name == "compile_mirea_report":
         directory_path = arguments.get("directory_path")
         custom_titlepage = arguments.get("custom_titlepage")
         
         if not directory_path:
-            return [types.TextContent(
-                type="text",
-                text="Error: directory_path is required"
-            )]
+            raise ValueError("directory_path is required")
         
         try:
             output_pdf_path = compile_mirea_report(
@@ -94,10 +86,8 @@ async def handle_call_tool(name: str, arguments: dict) -> list[types.TextContent
                 text=f"Successfully compiled MIREA report to PDF: {output_pdf_path}"
             )]
         except Exception as e:
-            return [types.TextContent(
-                type="text",
-                text=f"Error compiling MIREA report: {str(e)}"
-            )]
+            # Re-raise the exception so MCP client receives an error
+            raise RuntimeError(f"Error compiling MIREA report: {str(e)}") from e
     
     else:
         raise ValueError(f"Unknown tool: {name}")

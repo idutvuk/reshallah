@@ -18,10 +18,19 @@ def compile_directory_to_pdf(directory_path: str, content_file: str = None, cont
         Путь к созданному PDF файлу
         
     Raises:
-        StopIteration: Если не найден файл main.typ
-        FileNotFoundError: Если директория не существует
+        FileNotFoundError: Если директория не существует или не найден файл main.typ
+        RuntimeError: Если произошла ошибка компиляции Typst
     """
-    typ_file = next(f for f in os.listdir(directory_path) if f.endswith("main.typ"))
+    if not os.path.exists(directory_path):
+        raise FileNotFoundError(f"Directory not found: {directory_path}")
+    
+    if not os.path.isdir(directory_path):
+        raise NotADirectoryError(f"Path is not a directory: {directory_path}")
+    
+    try:
+        typ_file = next(f for f in os.listdir(directory_path) if f.endswith("main.typ"))
+    except StopIteration:
+        raise FileNotFoundError(f"No main.typ file found in directory: {directory_path}")
     
     directory_name = os.path.basename(os.path.normpath(directory_path))
     parent_dir = os.path.dirname(os.path.abspath(directory_path))
@@ -99,15 +108,30 @@ def compile_simple_typst(directory: str, output: str = "output") -> str:
         
     Returns:
         Путь к созданному PDF файлу
+        
+    Raises:
+        FileNotFoundError: Если директория не существует или не найден .typ файл
+        RuntimeError: Если произошла ошибка компиляции Typst
     """
+    if not os.path.exists(directory):
+        raise FileNotFoundError(f"Directory not found: {directory}")
+    
+    if not os.path.isdir(directory):
+        raise NotADirectoryError(f"Path is not a directory: {directory}")
+    
     outfile_name = f"{output}.pdf"
 
     with tempfile.TemporaryDirectory() as temp_dir, open(outfile_name, "wb") as output_file:
         shutil.copytree(directory, temp_dir, dirs_exist_ok=True)
+        
         typ_file = None
         for f in os.listdir(temp_dir):
             if f.endswith(".typ"):
                 typ_file = f
+                break
+
+        if not typ_file:
+            raise FileNotFoundError(f"No .typ file found in directory: {directory}")
 
         typ_file_path = os.path.join(temp_dir, typ_file)
         output = typst.compile(

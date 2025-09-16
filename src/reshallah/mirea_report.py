@@ -17,9 +17,15 @@ def compile_mirea_report(directory_path: str, custom_titlepage: str = None) -> s
         
     Raises:
         FileNotFoundError: Если не найден content.typ или шаблон
+        RuntimeError: Если произошла ошибка компиляции Typst
     """
-    # Normalize the directory path
     directory_path = os.path.abspath(directory_path)
+    
+    if not os.path.exists(directory_path):
+        raise FileNotFoundError(f"Directory not found: {directory_path}")
+    
+    if not os.path.isdir(directory_path):
+        raise NotADirectoryError(f"Path is not a directory: {directory_path}")
     
     # Check if content.typ exists in the directory
     content_typ_path = os.path.join(directory_path, "content.typ")
