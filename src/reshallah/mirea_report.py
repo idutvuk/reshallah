@@ -77,7 +77,6 @@ def compile_mirea_report(directory_path: str, custom_titlepage: str = None) -> s
             ppi=144.0
         )
 
-        # If a custom title page is provided, merge it before the compiled report
         if custom_titlepage and os.path.exists(custom_titlepage):
             compiled_pdf_temp_path = os.path.join(temp_dir, "compiled.pdf")
             with open(compiled_pdf_temp_path, "wb") as compiled_file:

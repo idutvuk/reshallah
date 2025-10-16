@@ -1,5 +1,6 @@
 import asyncio
 import os
+import json
 from mcp.server.models import InitializationOptions
 from mcp.server import NotificationOptions, Server
 import mcp.types as types
@@ -13,57 +14,10 @@ server = Server("reshallah")
 
 @server.list_prompts()
 async def handle_list_prompt_actions() -> list:
-    return [
-        {
-            "name":"reshallah_guidelines",
-            "description":"Instructions for using the reshallah system and its pipeline structure",
-            "promptSchema":{
-                "type": "object",
-                "properties": {},
-                "required": []
-            }
-        },
-        {
-            "name":"reshallah_project_structure",
-            "description":"Guidelines for project structure in reshallah",
-            "promptSchema":{
-                "type": "object",
-                "properties": {},
-                "required": []
-            }
-        },
-        {
-            "name":"reshallah_titlepage_selection",
-            "description":"Choose a titlepage type for your report",
-            "promptSchema":{
-                "type": "object",
-                "properties": {
-                    "titlepage_type": {
-                        "type": "string",
-                        "description": "Type of titlepage to use",
-                        "enum": ["none", "custom", "default", "mirea"]
-                    },
-                    "author_name": {
-                        "type": "string",
-                        "description": "Optional: Author name for the titlepage"
-                    },
-                    "author_group": {
-                        "type": "string",
-                        "description": "Optional: Author's group/class for the titlepage"
-                    },
-                    "department": {
-                        "type": "string",
-                        "description": "Optional: Department name for the titlepage"
-                    },
-                    "save_as_default": {
-                        "type": "boolean",
-                        "description": "Optional: Save these settings as default for future reports"
-                    }
-                },
-                "required": ["titlepage_type"]
-            }
-        },
-    ]
+    assets_dir = os.path.join(os.path.dirname(__file__), "assets")
+    prompts_path = os.path.join(assets_dir, "prompts.json")
+    with open(prompts_path, "r", encoding="utf-8") as f:
+        return json.load(f)
 
 @server.list_tools()
 async def handle_list_tools() -> list[types.Tool]:
@@ -105,108 +59,21 @@ async def handle_list_tools() -> list[types.Tool]:
 
 @server.list_prompts()
 async def handle_prompt_action(name: str, arguments: dict) -> list:
+    assets_dir = os.path.join(os.path.dirname(__file__), "assets")
     if name == "reshallah_guidelines":
-        return [{
-            "type":"text",
-            "text":"""
-# Руководство по использованию Reshallah
-
-## Общие инструкции
-
-Reshallah - это Python пакет для автоматизации создания отчетов по практическим заданиям, который можно подключить к MCP или использовать через CLI.
-
-## Этапы рабочего процесса
-
-0. **Установка и подготовка**:
-   - Добавьте в `mcp.json` следующую конфигурацию:
-   ```json
-   "mcpServers": {
-     "reshallah": {
-       "command": "uvx git+https://github.com/idutvuk/reshallah mcp"
-     }
-   }
-   ```
-
-1. **Создание задания**:
-   - Создайте входное задание в файле `input/tasks.md` в формате todolist
-
-2. **Решение задач**:
-   - Решите задачи и создайте файлы в директории `solution/pracN/`
-   - Создайте тесты для проверки решений
-   - Убедитесь, что все решения работают корректно
-
-3. **Форматирование и очистка кода**:
-   - Очистите код от лишних комментариев
-   - Отформатируйте код для презентации
-
-4. **Создание отчета**:
-   - Сформируйте отчет `content.typ` в директории `output/`
-   - Скомпилируйте отчет с помощью соответствующего инструмента
-
-## Типы титульных страниц
-
-- **none**: без титульной страницы
-- **custom**: пользовательская PDF титульная страница
-- **default**: простая титульная страница
-- **mirea**: титульная страница по шаблону МИРЭА
-
-## Рекомендации
-
-- Делайте коммит после каждого этапа
-- Сохраняйте структуру проекта согласно документации
-- Используйте соответствующие инструменты компиляции для разных типов отчетов
-"""
-        }]
+        guidelines_path = os.path.join(assets_dir, "reshallah_guidelines.md")
+        with open(guidelines_path, "r", encoding="utf-8") as f:
+            return [{
+                "type":"text",
+                "text": f.read()
+            }]
     elif name == "reshallah_project_structure":
-        return [{
-            "type":"text",
-            "text":"""
-# Структура проекта Reshallah
-
-```
-project/
-  ├── input/
-  │   └── tasks.md           # Описание заданий в формате todolist
-  │
-  ├── solution/
-  │   ├── prac1/
-  │   │   ├── task1.lang     # Решение задачи 1 практики 1
-  │   │   ├── task1_test.lang # Тест для задачи 1
-  │   │   ├── task2.lang     # Решение задачи 2 практики 1
-  │   │   └── ...
-  │   │
-  │   ├── prac2/
-  │   │   ├── task1.lang
-  │   │   └── ...
-  │   │
-  │   └── ...
-  │
-  └── output/
-      ├── content.typ        # Основной контент отчета
-      ├── additional_typsts.typ # Дополнительные файлы Typst
-      ├── resource1.png      # Ресурсы (изображения и пр.)
-      ├── resource2.media
-      ├── ...
-      └── output.pdf         # Итоговый скомпилированный отчет
-```
-
-## Пояснения к структуре
-
-- **input/**: Директория для входных заданий
-  - `tasks.md`: Файл с описанием заданий, которые нужно выполнить
-
-- **solution/**: Директория для решений заданий
-  - `pracN/`: Поддиректория для практики номер N
-    - `taskM.lang`: Файл с решением задачи M (где .lang - расширение языка программирования)
-    - `taskM_test.lang`: Тестовый файл для задачи M
-
-- **output/**: Директория для выходных файлов отчета
-  - `content.typ`: Основной файл с контентом отчета в формате Typst. Должен содержать только структуру и текст, без стилей и других данных. Содержание, титульники и прочее генерируется автоматически.
-  - Дополнительные файлы и ресурсы для отчета
-  - `output.pdf`: Финальный скомпилированный отчет в формате PDF
-FORBIDDEN, ЗАПРЕЩЕНО вставлять в content.typ #set page, #set text #set par и другие директивы, которые влияют на стили и структуру страницы.
-"""
-        }]
+        structure_path = os.path.join(assets_dir, "reshallah_project_structure.md")
+        with open(structure_path, "r", encoding="utf-8") as f:
+            return [{
+                "type":"text",
+                "text": f.read()
+            }]
     elif name == "reshallah_titlepage_selection":
         titlepage_type = arguments.get("titlepage_type")
         author_name = arguments.get("author_name", "")

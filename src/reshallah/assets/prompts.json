@@ -1,0 +1,51 @@
+[
+  {
+    "name": "reshallah_guidelines",
+    "description": "Instructions for using the reshallah system and its pipeline structure",
+    "promptSchema": {
+      "type": "object",
+      "properties": {},
+      "required": []
+    }
+  },
+  {
+    "name": "reshallah_project_structure",
+    "description": "Guidelines for project structure in reshallah",
+    "promptSchema": {
+      "type": "object",
+      "properties": {},
+      "required": []
+    }
+  },
+  {
+    "name": "reshallah_titlepage_selection",
+    "description": "Choose a titlepage type for your report",
+    "promptSchema": {
+      "type": "object",
+      "properties": {
+        "titlepage_type": {
+          "type": "string",
+          "description": "Type of titlepage to use",
+          "enum": ["none", "custom", "default", "mirea"]
+        },
+        "author_name": {
+          "type": "string",
+          "description": "Optional: Author name for the titlepage"
+        },
+        "author_group": {
+          "type": "string",
+          "description": "Optional: Author's group/class for the titlepage"
+        },
+        "department": {
+          "type": "string",
+          "description": "Optional: Department name for the titlepage"
+        },
+        "save_as_default": {
+          "type": "boolean",
+          "description": "Optional: Save these settings as default for future reports"
+        }
+      },
+      "required": ["titlepage_type"]
+    }
+  }
+]
