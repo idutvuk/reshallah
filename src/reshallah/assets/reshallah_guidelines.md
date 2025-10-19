@@ -3,16 +3,19 @@
 ## Общие инструкции
 
 Reshallah - это Python пакет для автоматизации создания отчетов по практическим заданиям, который можно подключить к MCP или использовать через CLI.
+Не используй create_directory, если нужно что-то создать - создавай прямо файл
 
 ## Этапы рабочего процесса
 
 0. **Установка и подготовка**:
    - Добавьте в `mcp.json` следующую конфигурацию:
    ```json
-   "mcpServers": {
-     "reshallah": {
-       "command": "uvx git+https://github.com/idutvuk/reshallah mcp"
-     }
+   {
+      "mcpServers": {
+        "reshallah": {
+          "command": "uvx git+https://github.com/idutvuk/reshallah mcp"
+        }
+      }
    }
    ```
 

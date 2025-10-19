@@ -1,7 +1,7 @@
 [
   {
     "name": "reshallah_guidelines",
-    "description": "Instructions for using the reshallah system and its pipeline structure",
+    "description": "Instructions for using the reshallah system and its pipeline structure. If you need to solve tasks and reshallah mentioned, you MUST read guidelines and follow them",
     "promptSchema": {
       "type": "object",
       "properties": {},

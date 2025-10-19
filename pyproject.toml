@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "reshallah"
-version = "0.3.2"
-requires-python = ">=3.11"
+version = "0.4.3"
+requires-python = ">=3.12"
 dependencies = [
   "typst",
   "typer",
