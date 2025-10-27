@@ -40,13 +40,10 @@ def compile_directory_to_pdf(directory_path: str, content_file: str = None, cont
     with tempfile.TemporaryDirectory() as temp_dir:
         shutil.copytree(directory_path, temp_dir, dirs_exist_ok=True)
         
-        # Если передан content_file, копируем его как content.typ
         if content_file and os.path.exists(content_file):
             shutil.copy2(content_file, os.path.join(temp_dir, "content.typ"))
         
-        # Если передана content_directory, копируем все содержимое и создаем content.typ
         if content_directory and os.path.exists(content_directory):
-            # Копируем все файлы из content_directory в temp_dir
             for item in os.listdir(content_directory):
                 src = os.path.join(content_directory, item)
                 dst = os.path.join(temp_dir, item)
@@ -55,7 +52,6 @@ def compile_directory_to_pdf(directory_path: str, content_file: str = None, cont
                 elif os.path.isdir(src):
                     shutil.copytree(src, dst, dirs_exist_ok=True)
             
-            # Ищем content.typ в content_directory
             content_typ_path = os.path.join(content_directory, "content.typ")
             if os.path.exists(content_typ_path):
                 shutil.copy2(content_typ_path, os.path.join(temp_dir, "content.typ"))
@@ -68,7 +64,6 @@ def compile_directory_to_pdf(directory_path: str, content_file: str = None, cont
             ppi=144.0
         )
 
-        # Если передан custom_titlepage, объединяем PDF'ы через PdfMerger
         if custom_titlepage and os.path.exists(custom_titlepage):
             compiled_pdf_temp_path = os.path.join(temp_dir, "compiled.pdf")
             with open(compiled_pdf_temp_path, "wb") as compiled_file:

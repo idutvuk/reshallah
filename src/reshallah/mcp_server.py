@@ -5,7 +5,6 @@ from mcp.server.fastmcp import FastMCP
 from .mirea_report import compile_mirea_report as compile_mirea_report_func
 from .typst_compiler import compile_directory_to_pdf
 
-# Create FastMCP server
 mcp = FastMCP("reshallah")
 
 
@@ -190,6 +189,5 @@ def version() -> str:
     return importlib.metadata.version("reshallah")
 
 
-# Run the FastMCP server
 if __name__ == "__main__":
     mcp.run()
