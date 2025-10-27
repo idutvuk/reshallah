@@ -1,10 +1,9 @@
 from typing_extensions import Annotated
-import asyncio
 
 import typer
 
 from .typst_compiler import compile_simple_typst
-from .mcp_server import run_mcp_server
+from .mcp_server import mcp as server
 
 app = typer.Typer()
 
@@ -20,7 +19,7 @@ def main(
 
 @app.command()
 def mcp():
-    asyncio.run(run_mcp_server())
+    server.run()
 
 def cli_main():
     app()

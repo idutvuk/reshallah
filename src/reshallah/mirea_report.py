@@ -28,12 +28,10 @@ def compile_mirea_report(directory_path: str, custom_titlepage: str = None) -> s
     if not os.path.isdir(directory_path):
         raise NotADirectoryError(f"Path is not a directory: {directory_path}")
     
-    # Check if content.typ exists in the directory
     content_typ_path = os.path.join(directory_path, "content.typ")
     if not os.path.exists(content_typ_path):
         raise FileNotFoundError(f"content.typ file not found at {content_typ_path}. Directory path: {directory_path}. This is required for MIREA reports.")
     
-    # Get the path to the mirea_report_template folder
     current_dir = os.path.dirname(os.path.abspath(__file__))
     template_dir = os.path.join(current_dir, "assets", "mirea_report_template")
     
@@ -45,7 +43,6 @@ def compile_mirea_report(directory_path: str, custom_titlepage: str = None) -> s
     output_pdf_path = os.path.join(parent_dir, f"{directory_name}.pdf")
     
     with tempfile.TemporaryDirectory() as temp_dir:
-        # First copy the template files
         for item in os.listdir(template_dir):
             src = os.path.join(template_dir, item)
             dst = os.path.join(temp_dir, item)
@@ -54,13 +51,11 @@ def compile_mirea_report(directory_path: str, custom_titlepage: str = None) -> s
             elif os.path.isdir(src):
                 shutil.copytree(src, dst, dirs_exist_ok=True)
         
-        # Then copy the user's content.typ file (overwriting template's content.typ)
         shutil.copy2(content_typ_path, os.path.join(temp_dir, "content.typ"))
         
-        # Copy any other files from user's directory (but not overwriting main template files)
         template_files = {"main.typ",  "mirea-logo.png"}
         for item in os.listdir(directory_path):
-            if item not in template_files and item != "content.typ":  # Skip content.typ as it's already copied
+            if item not in template_files and item != "content.typ":
                 src = os.path.join(directory_path, item)
                 dst = os.path.join(temp_dir, item)
                 if os.path.isfile(src):
@@ -68,7 +63,6 @@ def compile_mirea_report(directory_path: str, custom_titlepage: str = None) -> s
                 elif os.path.isdir(src):
                     shutil.copytree(src, dst, dirs_exist_ok=True)
         
-        # Compile using main.typ
         typ_file_path = os.path.join(temp_dir, "main.typ")
         
         output = typst.compile(
