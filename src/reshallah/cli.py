@@ -26,6 +26,5 @@ def mcp():
 def cli_main():
     app()
 
-
 if __name__ == "__main__":
     cli_main()
