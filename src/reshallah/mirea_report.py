@@ -8,40 +8,42 @@ from PyPDF2 import PdfMerger
 def compile_mirea_report(directory_path: str, custom_titlepage: str = None) -> str:
     """
     Компилирует MIREA отчет используя встроенный шаблон.
-    
+
     Args:
         directory_path: Путь к директории с файлом content.typ
         custom_titlepage: Опциональный путь к PDF файлу для титульной страницы
-        
+
     Returns:
         Путь к созданному PDF файлу
-        
+
     Raises:
         FileNotFoundError: Если не найден content.typ или шаблон
         RuntimeError: Если произошла ошибка компиляции Typst
     """
     directory_path = os.path.abspath(directory_path)
-    
+
     if not os.path.exists(directory_path):
         raise FileNotFoundError(f"Directory not found: {directory_path}")
-    
+
     if not os.path.isdir(directory_path):
         raise NotADirectoryError(f"Path is not a directory: {directory_path}")
-    
+
     content_typ_path = os.path.join(directory_path, "content.typ")
     if not os.path.exists(content_typ_path):
-        raise FileNotFoundError(f"content.typ file not found at {content_typ_path}. Directory path: {directory_path}. This is required for MIREA reports.")
-    
+        raise FileNotFoundError(
+            f"content.typ file not found at {content_typ_path}. Directory path: {directory_path}. This is required for MIREA reports."
+        )
+
     current_dir = os.path.dirname(os.path.abspath(__file__))
     template_dir = os.path.join(current_dir, "assets", "mirea_report_template")
-    
+
     if not os.path.exists(template_dir):
         raise FileNotFoundError(f"MIREA report template not found at {template_dir}")
-    
+
     directory_name = os.path.basename(os.path.normpath(directory_path))
     parent_dir = os.path.dirname(os.path.abspath(directory_path))
     output_pdf_path = os.path.join(parent_dir, f"{directory_name}.pdf")
-    
+
     with tempfile.TemporaryDirectory() as temp_dir:
         for item in os.listdir(template_dir):
             src = os.path.join(template_dir, item)
@@ -50,10 +52,10 @@ def compile_mirea_report(directory_path: str, custom_titlepage: str = None) -> s
                 shutil.copy2(src, dst)
             elif os.path.isdir(src):
                 shutil.copytree(src, dst, dirs_exist_ok=True)
-        
+
         shutil.copy2(content_typ_path, os.path.join(temp_dir, "content.typ"))
-        
-        template_files = {"main.typ",  "mirea-logo.png"}
+
+        template_files = {"main.typ", "mirea-logo.png"}
         for item in os.listdir(directory_path):
             if item not in template_files and item != "content.typ":
                 src = os.path.join(directory_path, item)
@@ -62,14 +64,10 @@ def compile_mirea_report(directory_path: str, custom_titlepage: str = None) -> s
                     shutil.copy2(src, dst)
                 elif os.path.isdir(src):
                     shutil.copytree(src, dst, dirs_exist_ok=True)
-        
+
         typ_file_path = os.path.join(temp_dir, "main.typ")
-        
-        output = typst.compile(
-            typ_file_path,
-            format="pdf",
-            ppi=144.0
-        )
+
+        output = typst.compile(typ_file_path, format="pdf", ppi=144.0)
 
         if custom_titlepage and os.path.exists(custom_titlepage):
             compiled_pdf_temp_path = os.path.join(temp_dir, "compiled.pdf")
@@ -87,5 +85,5 @@ def compile_mirea_report(directory_path: str, custom_titlepage: str = None) -> s
         else:
             with open(output_pdf_path, "wb") as output_file:
                 output_file.write(output)
-    
+
     return output_pdf_path

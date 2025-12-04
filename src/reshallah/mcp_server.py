@@ -60,6 +60,7 @@ Reshallah - это Python пакет для автоматизации созд�
 - Используйте соответствующие инструменты компиляции для разных типов отчетов
 """
 
+
 @mcp.prompt()
 def reshallah_project_structure() -> str:
     """Guidelines for project structure in reshallah"""
@@ -110,13 +111,14 @@ project/
 FORBIDDEN, ЗАПРЕЩЕНО вставлять в content.typ #set page, #set text #set par и другие директивы, которые влияют на стили и структуру страницы.
 """
 
+
 @mcp.prompt()
 def reshallah_titlepage_selection(
     titlepage_type: str,
     author_name: str = "",
     author_group: str = "",
     department: str = "",
-    save_as_default: bool = False
+    save_as_default: bool = False,
 ) -> str:
     """Choose a titlepage type for your report"""
     if titlepage_type == "none":
@@ -139,49 +141,55 @@ def reshallah_titlepage_selection(
             response_text += f"\nКафедра: {department}"
     else:
         response_text = f"Неизвестный тип титульной страницы: {titlepage_type}"
-    
+
     if save_as_default:
-        response_text += "\n\nЭти настройки будут сохранены как стандартные для будущих отчетов."
-        
+        response_text += (
+            "\n\nЭти настройки будут сохранены как стандартные для будущих отчетов."
+        )
+
     return response_text
+
 
 @mcp.tool()
 def compile_typst_to_pdf(directory_path: str) -> str:
     """Compile a Typst document directory to PDF. The PDF will be saved next to the directory."""
     if not directory_path:
         raise ValueError("directory_path is required")
-    
+
     try:
         directory_path = os.path.abspath(directory_path)
         if not os.path.exists(directory_path):
             raise FileNotFoundError(f"Directory not found: {directory_path}")
-        
+
         output_pdf_path = compile_directory_to_pdf(directory_path)
         return f"Successfully compiled Typst document to PDF: {output_pdf_path}"
     except Exception as e:
         raise RuntimeError(f"Error compiling Typst document: {str(e)}") from e
+
 
 @mcp.tool()
 def compile_mirea_report(directory_path: str, custom_titlepage: str = None) -> str:
     """Compile a MIREA report using the built-in template. Requires a content.typ file in the target directory. The PDF will be saved next to the directory. All paths should be absolute and in OS-like format like 'c:\\\\...' in windows or /home/... in *nix"""
     if not directory_path:
         raise ValueError("directory_path is required")
-    
+
     try:
         directory_path = os.path.abspath(directory_path)
-        
+
         if custom_titlepage:
             custom_titlepage = os.path.abspath(custom_titlepage)
             if not os.path.exists(custom_titlepage):
-                raise FileNotFoundError(f"Custom titlepage not found: {custom_titlepage}")
-        
+                raise FileNotFoundError(
+                    f"Custom titlepage not found: {custom_titlepage}"
+                )
+
         output_pdf_path = compile_mirea_report_func(
-            directory_path, 
-            custom_titlepage=custom_titlepage
+            directory_path, custom_titlepage=custom_titlepage
         )
         return f"Successfully compiled MIREA report to PDF: {output_pdf_path}"
     except Exception as e:
         raise RuntimeError(f"Error compiling MIREA report: {str(e)}") from e
+
 
 @mcp.tool()
 def version() -> str:
