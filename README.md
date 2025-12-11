@@ -25,3 +25,4 @@
 2. https://github.com/benzlokzik/md2gost md -> gost но рабочий, правда, вроде, заброшенный
 3. https://github.com/mirea-ninja/Latex-Template-for-Report-Diploma-Thesis - компилятор отчётов мирэа из LaTeX
 4. https://oxydoxy.ardyc.ru/ - md -> gost docx. Выключенный сайт
+5. https://github.com/grenition/md2gost - простая вебтулза для компиляции мд
